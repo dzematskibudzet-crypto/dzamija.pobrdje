@@ -27,7 +27,7 @@ body{
     overflow:hidden;
 }
 
-/* VRH */
+/* HEADER */
 .header{
     text-align:center;
     padding:25px;
@@ -40,7 +40,6 @@ body{
     font-weight:600;
 }
 
-/* PRAVOUGAONIK ZA NAZIV */
 .title-box{
     margin:25px auto 0 auto;
     padding:20px 60px;
@@ -56,7 +55,6 @@ body{
     letter-spacing:3px;
 }
 
-/* Sat */
 .clock{
     position:absolute;
     right:40px;
@@ -77,7 +75,7 @@ body{
     border-bottom:4px solid #cdbfa4;
 }
 
-/* NAMAZ VREMENA */
+/* NAMAZ */
 .prayers{
     flex:1.4;
     display:flex;
@@ -98,7 +96,7 @@ body{
     font-weight:800;
 }
 
-/* SLEDEĆI NAMAZ */
+/* SLEDECI */
 .next{
     font-size:36px;
 }
@@ -106,25 +104,25 @@ body{
 /* PLAKATI */
 .posters{
     flex:1;
-    display:flex;
-    justify-content:center;
-    align-items:center;
+    position:relative;
+    overflow:hidden;
     background:#007c92;
 }
 
-.poster-box{
-    width:85%;
-    aspect-ratio:16/9;
-    background:linear-gradient(135deg,#ffffff33,#00000033);
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    font-size:50px;
-    font-weight:600;
-    border-radius:20px;
+.poster-slide{
+    position:absolute;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    opacity:0;
+    transition:opacity 1s ease-in-out;
 }
 
-/* DONJA TRAKA */
+.poster-slide.active{
+    opacity:1;
+}
+
+/* TICKER */
 .ticker{
     background:#e7d7b9;
     color:#222;
@@ -153,14 +151,13 @@ body{
     <div class="header">
         <div class="clock" id="clock"></div>
         <h1>Islamska zajednica u Srbiji</h1>
-
         <div class="title-box">
             <h2>Džemat Pobrdje</h2>
         </div>
     </div>
 
     <div class="bar">
-        Četvrtak, 26. februar 2026 / 8. ramazan 1447
+        <span id="todayDate"></span>
     </div>
 
     <div class="prayers">
@@ -176,10 +173,10 @@ body{
         Sljedeći namaz: <span id="nextName"></span> počinje za <span id="countdown"></span>
     </div>
 
+    <!-- PLAKATI -->
     <div class="posters">
-        <div class="poster-box">
-            OVDJE IDE PLAKAT 16:9
-        </div>
+        <img src="temelji-imana-6.png" class="poster-slide active">
+        <img src="isra-i-miradz.png" class="poster-slide">
     </div>
 
     <div class="ticker">
@@ -189,15 +186,30 @@ body{
 </div>
 
 <script>
+
+/* SAT */
 function updateClock(){
     const now = new Date();
-    const time = now.toLocaleTimeString('bs-BA',{hour12:false});
-    document.getElementById("clock").innerText = time;
+    document.getElementById("clock").innerText =
+        now.toLocaleTimeString('bs-BA',{hour12:false});
 }
 setInterval(updateClock,1000);
 updateClock();
 
-/* NAMAZ VREMENA */
+/* DATUM */
+function updateDate(){
+    const now = new Date();
+    document.getElementById("todayDate").innerText =
+        now.toLocaleDateString('bs-BA',{
+            weekday:'long',
+            day:'numeric',
+            month:'long',
+            year:'numeric'
+        });
+}
+updateDate();
+
+/* NAMAZ */
 const prayers = [
     {name:"Sabah", time:"05:56"},
     {name:"Podne", time:"11:52"},
@@ -208,43 +220,47 @@ const prayers = [
 
 function updateCountdown(){
     const now = new Date();
-    let nextPrayer = null;
-    let nextTime = null;
+    let nextPrayer=null, nextTime=null;
 
     for(let p of prayers){
-        let [h,m] = p.time.split(":");
-        let prayerTime = new Date();
-        prayerTime.setHours(h,m,0);
-
-        if(prayerTime > now){
-            nextPrayer = p.name;
-            nextTime = prayerTime;
-            break;
-        }
+        let [h,m]=p.time.split(":");
+        let t=new Date();
+        t.setHours(h,m,0);
+        if(t>now){ nextPrayer=p.name; nextTime=t; break;}
     }
 
     if(!nextPrayer){
-        let [h,m] = prayers[0].time.split(":");
-        nextTime = new Date();
+        let [h,m]=prayers[0].time.split(":");
+        nextTime=new Date();
         nextTime.setDate(nextTime.getDate()+1);
         nextTime.setHours(h,m,0);
-        nextPrayer = prayers[0].name;
+        nextPrayer=prayers[0].name;
     }
 
-    let diff = nextTime - now;
-    let hours = Math.floor(diff/1000/60/60);
-    let minutes = Math.floor((diff/1000/60)%60);
-    let seconds = Math.floor((diff/1000)%60);
+    let diff=nextTime-now;
+    let h=Math.floor(diff/1000/60/60);
+    let m=Math.floor((diff/1000/60)%60);
+    let s=Math.floor((diff/1000)%60);
 
-    document.getElementById("nextName").innerText = nextPrayer;
-    document.getElementById("countdown").innerText =
-        String(hours).padStart(2,'0') + ":" +
-        String(minutes).padStart(2,'0') + ":" +
-        String(seconds).padStart(2,'0');
+    document.getElementById("nextName").innerText=nextPrayer;
+    document.getElementById("countdown").innerText=
+        String(h).padStart(2,'0')+":"+
+        String(m).padStart(2,'0')+":"+
+        String(s).padStart(2,'0');
 }
-
 setInterval(updateCountdown,1000);
 updateCountdown();
+
+/* SLIDESHOW */
+let slides=document.querySelectorAll(".poster-slide");
+let index=0;
+
+setInterval(()=>{
+    slides[index].classList.remove("active");
+    index=(index+1)%slides.length;
+    slides[index].classList.add("active");
+},10000);
+
 </script>
 
 </body>
